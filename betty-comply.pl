@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use Term::ANSIColor qw(:constants);
+use open qw/:std :utf8/;
 use v5;
 
 =for
@@ -20,7 +21,7 @@ sub parse_and_chomp {
   my $args = scalar(@_);
   if($args != 1){
 	print "Wrong argument in subroutine!";
-	exit;
+	exit 271;
   }
 
   @vecs = @_;
@@ -36,12 +37,6 @@ sub parse_and_chomp {
 	push(@file_lines,$line);
   }
 
-}
-
-sub print_parsed_lines {
-  for my $file (@file_lines) {
-	print "$file\n";
-  }
 }
 
 
@@ -85,10 +80,11 @@ sub format_trailing {
 			$file_lines[$l_count] = $f_line;
 			#print "an else if block met \"$f_line\"\n";
 	  }
-		elsif($f_line =~ /^\s*(while)\s*(\([[:print:]]+\))\s*(\{)?\s*$/mg) {
-			$f_line = $1 . " " . $2 . "\n$3";
+		elsif($f_line =~ /^(\s*)(while|for)\s*(\([[:print:]]+\))\s*(\{)?\s*$/mg) {
+			$f_line = $1 . $2 . " " . $3 . "\n$4";
 			$file_lines[$l_count] = $f_line;
 		}
+		#TODO: ADD SUPPORT FOR FOR LOOPS
 	  elsif(not grep /^\s*(do)\s*\{\s*$/,$f_line) {
 			$f_line =~ s/{$/\n\{/m;
 			$file_lines[$l_count] = $f_line;
@@ -106,7 +102,6 @@ sub format_file {
   spaces_to_tabs($arg_offset);
   format_trailing($arg_offset);
   adjust_indent($arg_offset);
-  #print_parsed_lines($arg_offset);
   rm_trailing_wp($arg_offset);
   separate_RD_tokens($arg_offset);
   remove_blanks($arg_offset);
@@ -132,11 +127,11 @@ sub adjust_indent {
 	my $f_line = $file_lines[$i];
 
 	if(grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
-		print "seen entry\n";
+		#print "seen entry\n";
 	  $seen_entry = 1;
 	}
 	if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
-		print "seen function entry \n";
+		#print "seen function entry \n";
 		$seen_entry = 1;
 	}
 	if ($seen_entry == 1) {
@@ -172,7 +167,7 @@ sub adjust_indent {
 		if($f_line =~ /^[[:blank:]]*([[:print:]]+(;|\)|:))/mg) {
 		  my $statement = $1;
 		  if (grep(/^\s*(?:(?:case [[:print:]]+|default\s*|goto\s*|error\s*|end\s*):)\s*$/,$f_line)) {
-			print "a case or default statement found.\n";
+		#	print "a case or default statement found.\n";
 			$file_lines[$i] = ($ind_char x ($ind_level - 1)) . $statement;
 		  }
 		  else{
@@ -186,7 +181,7 @@ sub adjust_indent {
 		my $closing_brace = $2;
 		$ind_level = $ind_level - 1 >= 0 ? $ind_level - 1 : 0;
 		$file_lines[$i] = ($ind_char x $ind_level) . $closing_brace;
-		#print "indentation level: $ind_level:$f_line\n";
+		print "indentation level: $ind_level:$f_line\n";
 	  }
 	}
 
@@ -207,7 +202,7 @@ sub no_brace_indent {
 	  my $existing_indent = $1;
 	  if ($file_lines[$l_count + 1] !~ /^\s*{\s*$/) {
 		$file_lines[$l_count] = $existing_indent . $2;
-		print "indentation level: $ind_level:$f_line\n";
+		#print "indentation level: $ind_level:$f_line\n";
 		$ind_level++;
 		#print "no brace indent on $f_line\n";
 	  }
@@ -284,7 +279,7 @@ sub separate_RD_tokens {
 	if ($f_line !~ /"[^"]+"/g) {
 	if ($f_line =~ /(?<=[[:graph:]])(,)(?=[[:graph:]])/g) {
 		if ($` =~ /^[^"]*"[^"]*"[^"]*/ or $' =~ /[^"]*"[^"]*"[^"]*$/ or (not grep(/"/,$f_line))) {
-			print "comma separated tokens found\n";
+		#	print "comma separated tokens found\n";
 			$f_line = $` . $1 . " " . $';
 			$file_lines[$l_count] = $f_line;
 
@@ -410,7 +405,7 @@ sub brace_unbraced_ifelse_if_needed {
 
   for my $f_line (@file_lines) {
 		if ($f_line =~ /^(\s+)if\s+\([[:print:]]+\)\s*$/m) {
-			print "if line: \t $f_line \n";
+		#	print "if line: \t $f_line \n";
 			my $indent_level = length($1);
 			$if_pts{"$l_count"} = [$indent_level,$f_line];
 		}
@@ -429,16 +424,16 @@ sub brace_unbraced_ifelse_if_needed {
 		my $b_count = $key;
 
 		push(@branch_pts,$b_count);
-		print  "b count : $b_count \t file lines : $#file_lines\n";
+		#print  "b count : $b_count \t file lines : $#file_lines\n";
 
 		for (; $b_count <= $#file_lines; $b_count++) {
-			print "going through the file lines\n";
+		#	print "going through the file lines\n";
 			if ($file_lines[$b_count] =~ /^(\s+)((?:else\s)?if \([[:print:]]+\)|else)\s*$/m) {
 				$b_ind_level = length($1);
-				print "branch indent level : $b_ind_level\t statement: $file_lines[$b_count]\n";
+		#		print "branch indent level : $b_ind_level\t statement: $file_lines[$b_count]\n";
 				if ($b_ind_level >= $indent_level and not ($b_ind_level == $indent_level && grep(/^\s+((?:for|if|while|switch)\s+\([[:print:]]+\)|do\s*{)\s*$/,$file_lines[$b_count]))) {
 				if(grep(/^\s+(else(?:\s+if\s+\([[:print:]]+\))?)\s*$/),$file_lines[$b_count] and $b_ind_level == $indent_level) {
-						print "branch found: $file_lines[$b_count]\t indent level: $b_ind_level\n";
+		#				print "branch found: $file_lines[$b_count]\t indent level: $b_ind_level\n";
 						push(@branch_pts,$b_count);
 				}
 				}
@@ -468,7 +463,7 @@ sub brace_unbraced_ifelse_if_needed {
 
 		for my $b_point (@branch_pts) {
 			if(not grep(/^$b_point$/,@wrapped_branch_pts)) {
-				print "unwrapped $file_lines[$b_point]\n";
+		#		print "unwrapped $file_lines[$b_point]\n";
 				push(@unwrapped_branch_pts,$b_point);
 			}
 		}
@@ -477,11 +472,11 @@ sub brace_unbraced_ifelse_if_needed {
 			my $wrapped =   $file_lines[$ub_point] . "\n" . $ind_char . "{" .  "\n" . $file_lines[$ub_point + 1] . "\n" . $ind_char . "}"; 
 			$file_lines[$ub_point] = $wrapped;
 			$file_lines[$ub_point + 1] = "$REMOVAL_PLACEHOLDER";
-			print "unwrapped: $file_lines[$ub_point]\n";
+		#	print "unwrapped: $file_lines[$ub_point]\n";
 		}
 
 		for my $wb_point (@wrapped_branch_pts) {
-			print "wrapped: $file_lines[$wb_point]\n";
+		#	print "wrapped: $file_lines[$wb_point]\n";
 		}
 
 	}
@@ -517,11 +512,13 @@ sub handle_opt_error {
 	print "error: recurring options!";
 	exit 1;
   }
-  if(grep(/lu/,$file_opt) or grep(/ul/,$file_opt)) { print "error: logically conflicting options!";
+  if(grep(/lu/,$file_opt) or grep(/ul/,$file_opt)) { 
+	print "error: logically conflicting options!";
 	exit 1;
   }
   if(grep(/^-.*[[:digit:]]/,$file_opt)) {
-	print "error: invalid option syntax!"; exit 1;
+	print "error: invalid option syntax!";
+	exit 1;
   }
 #END OF ERROR HANDLING
 }
@@ -535,7 +532,7 @@ sub eval_file_opt {
 sub validate_opt_length {
   my ($file_opt, $opt_len, @opt_list) = @_;
   printf "args: @_\n";
-  print " file opt: $file_opt\n opt list: @opt_list\n opt len : $opt_len\n"
+  #print " file opt: $file_opt\n opt list: @opt_list\n opt len : $opt_len\n"
   #if(($opt_len == 3 or $opt_len == 2) and (index (join("",@opt_list),'-') eq 0)) {
 	#handle_opt_error($file_opt);
 	#multi_parse_and_chomp(1);
@@ -550,11 +547,11 @@ if($parameters == 1) {
   # parseFile [FILE]
   $file_name = $ARGV[0];
   if(grep(/^-.*/,$file_name)) {
-	print "invalid single argument!\n";
-	exit 1;
+		print "invalid single argument!\n";
+		exit 1;
   }
 	format_file(0);
-  print "one parameter argument\n";
+  #print "one parameter argument\n";
 }
 elsif($parameters == 2) {
   # parseFile [...OPTIONS] [FILE]
@@ -569,12 +566,12 @@ elsif($parameters == 2) {
 	handle_opt_error($file_opt);
 	multi_parse_and_chomp(1);
 	eval_file_opt(@opt_list);
-	print "two parameter argument including options\n";
+	#print "two parameter argument including options\n";
   }
   # In cases where they are results of pathname expansions and their names are not preceeded by -
   elsif (not (grep(/^-.*/,$ARGV[0]) or grep (/^-.*/,$ARGV[1]))) {
 	multi_parse_and_chomp();
-	print "pathname expanded";
+	#print "pathname expanded";
   }
   else {
 	print "error: \n.1 unrecognizable synopsis specified 2-parameter mode\n\t check the man page for guide or visit our official documentation at https://github.com:HazelDaniel/perl-practice\n";
@@ -587,7 +584,7 @@ else {
   if(grep (/^((?<=\b)\w[[:graph:]]*\s?)+$/,"@ARGV")) {
 	# no options are provided. only pathname expansions or file lists
 	multi_parse_and_chomp();
-	print "multi parameter argument (pathnames only)\n";
+	#print "multi parameter argument (pathnames only)\n";
 
   }elsif(grep (/^(-[[:alpha:]]{1,2}\s)?((?<=\b)\w[[:graph:]]*\s?)+$/,"@ARGV")) {
 	# options are provided alongside file lists or expanded pathnames 
@@ -597,7 +594,7 @@ else {
 	my $opt_len = scalar(@opt_list);
 	multi_parse_and_chomp(1);
 	eval_file_opt(@opt_list);
-	print "multi parameter argument (options provided)\n";
+	#print "multi parameter argument (options provided)\n";
   }
   elsif (grep(/^--[[:graph:]]+/,$ARGV[1])) {
 	# parseFile [...OPTIONS] [--...LONG-OPTIONS] [FILE]
