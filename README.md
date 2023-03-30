@@ -1,9 +1,9 @@
 ### INSTALLATION
 		- clone the repo
-		- run the install.sh file as superuser like this:
-		```
+		- run the install.sh file as superuser:
+####
 		sudo ./install.sh
-		```
+###
 		- all set!
 
 ### NAME
