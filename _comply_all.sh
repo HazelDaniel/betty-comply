@@ -6,7 +6,7 @@ do
 	if [[ $(cat $i  | wc -l) ]]
 	then
 		echo "complying to betty ..."
-		betty-comply.pl $i
+		_bettyComply $i
 	else
 		echo "empty file : $i  skipping..."
 	fi
