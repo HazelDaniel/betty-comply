@@ -1,3 +1,11 @@
+### INSTALLATION
+		- clone the repo
+		- run the install.sh file as superuser like this:
+		```
+		sudo ./install.sh
+		```
+		- all set!
+
 ### NAME
        _bettyComply - adjust a file to betty's standards
 ### SYNOPSIS

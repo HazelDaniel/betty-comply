@@ -190,6 +190,7 @@ sub adjust_indent {
 }
 
 sub no_brace_indent {
+	#TODO: SUPPORT NO-BRACE WHILE LOOPS
   my ($arg_offset) = @_;
   my $ind_level = 0;
   my $ind_char = "\t";
