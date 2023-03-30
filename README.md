@@ -1,3 +1,5 @@
+### PREVIEW
+![preview](preview.gif)
 ### INSTALLATION
 		- clone the repo
 		- run the install.sh file as superuser:
