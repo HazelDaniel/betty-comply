@@ -8,6 +8,15 @@
 ###
 		- all set!
 
+### UPDATE
+		- clone the repo
+		- run the update.sh file as superuser:
+####
+		sudo ./update.sh
+### REMOVAL
+		- run the flush.sh file as superuser:
+####
+		sudo ./flush.sh
 ### NAME
        _bettyComply - adjust a file to betty's standards
 ### SYNOPSIS
