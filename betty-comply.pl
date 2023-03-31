@@ -14,6 +14,7 @@ $parameters = $#ARGV + 1;
 %f_property = ('nu',"numbered-and-upper",'nl',"numbered-and-lower",'n',"numbered",'u',"upper",'l',"lower");
 %f_long_property = ('--stop-at='=>"set-stop",'--offset='=>"set-offset");
 $REMOVAL_PLACEHOLDER = "BC<reserved>";
+$type_exp = "(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)";
 #END OF GLOBALS
 
 #SUB-ROUTINES
@@ -113,6 +114,7 @@ sub format_file {
 	pad_defs($arg_offset);
 	rm_wp_btw_fun_n_opn_par($arg_offset);
 	brace_unbraced_ifelse_if_needed($arg_offset);
+	fix_separated_tokens($arg_offset)
 
 }
 
@@ -387,7 +389,7 @@ sub rm_wp_btw_fun_n_opn_par {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-		if ($f_line =~ /^\s*((?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+)\s+(\([[:print:]]+\))\s*$/mg) {
+		if ($f_line =~ qr/^\s*((?:(?!\()$type_exp\s*(?!\)))+ [[:word:]]+)\s+(\([[:print:]]+\))\s*$/) {
 			$f_line = $1 . $2;
 			$file_lines[$l_count] = $f_line;
 		#	print "an tokens here are .$1\n$2 \n and \n$3\n";
@@ -484,6 +486,48 @@ sub brace_unbraced_ifelse_if_needed {
 
   write_parsed_lines($arg_offset);
 	
+}
+
+sub fix_separated_tokens {
+  my ($arg_offset) = @_;
+	my $l_count = 0;
+	my $seen_entry = 0;
+	for my $f_line (@file_lines) {
+		if(grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
+			$seen_entry = 1;
+		}
+		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
+			$seen_entry = 1;
+		}
+			if ($f_line =~ qr/($type_exp)\s*(\*)\s*(\w+)/) {
+				$f_line = $` . $1 . " " . $2 . $3 . $';
+				$file_lines[$l_count] = $f_line;
+			}
+		if ($seen_entry == 1) {
+			if ($f_line =~ /(\w+)\s+(\[[[:print:]]+\])/) {
+				#print "an open square brace here: \t $f_line \n";
+				$f_line = $` . $1 . $2 . $';
+				$file_lines[$l_count] = $f_line;
+			}
+		if ($f_line =~ /(\w+)\s*(\*)\s*(\w+)/mg) {
+			if ($f_line !~ /"[^"]+"/g and $1 !~ qr/$type_exp/) {
+				$f_line = $` . $1 . " " . $2 . " " . $3 . $';
+				$file_lines[$l_count] = $f_line;
+			}
+		}
+			if ($f_line =~ /(\w+)\s*(-)(?!>)\s*(\w+)/mg) {
+				if ($f_line !~ /"[^"]+"/g) {
+					$f_line = $` . $1 . " " . $2 . " " . $3 . $';
+					$file_lines[$l_count] = $f_line;
+
+				}
+			}
+
+		}
+
+	$l_count++;
+	}
+  write_parsed_lines($arg_offset);
 }
 
 sub multi_parse_and_chomp {
