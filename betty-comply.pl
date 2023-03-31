@@ -181,7 +181,7 @@ sub adjust_indent {
 		my $closing_brace = $2;
 		$ind_level = $ind_level - 1 >= 0 ? $ind_level - 1 : 0;
 		$file_lines[$i] = ($ind_char x $ind_level) . $closing_brace;
-		print "indentation level: $ind_level:$f_line\n";
+		#print "indentation level: $ind_level:$f_line\n";
 	  }
 	}
 
@@ -532,7 +532,7 @@ sub eval_file_opt {
 
 sub validate_opt_length {
   my ($file_opt, $opt_len, @opt_list) = @_;
-  printf "args: @_\n";
+ # printf "args: @_\n";
   #print " file opt: $file_opt\n opt list: @opt_list\n opt len : $opt_len\n"
   #if(($opt_len == 3 or $opt_len == 2) and (index (join("",@opt_list),'-') eq 0)) {
 	#handle_opt_error($file_opt);
@@ -614,10 +614,10 @@ else {
 	my $param_val_naive = $param_text[1];
 	my @param_val = split(/((?<==)(?=[[:alnum:]])|(?<==)(?=\'))/,$param_val_naive);
 	my $val = $param_val[2];
-	print "param val naive : $param_val_naive\n";
-	print "param text: $param\n";
-	print "param val: $val\n";
-	print "long parameter argument\n";
+#	print "param val naive : $param_val_naive\n";
+#	print "param text: $param\n";
+#	print "param val: $val\n";
+#	print "long parameter argument\n";
 
 	if (not $val) {
 	  print "no parameter value provided\n";
