@@ -538,20 +538,51 @@ sub document_function {
 	my $seen_entry = 0;
 	my $b_count;
 	my @comments = ();
-	my @parameters = ();
-	my $ret_val;
+	my $has_comments = 0;
 
 	for my $f_line (@file_lines) {
 		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
-		print"function line : $f_line\n";
 		if (not (grep/^.*;$/,$f_line)) {
-			$b_count = 1;
-				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count]))) {
-				unshift(@comments,$file_lines[$l_count - $b_count]);
+			$b_count = 0;
+				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count - 1]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count - 1]))) {
+				unshift(@comments,$file_lines[$l_count - $b_count - 1]);
 				$b_count++;
 			}
+			#print "b count : \t $b_count\n";
 			for my $c_line (@comments) {
-				print"\t comment zone: $c_line" . "\n";
+				if ((grep(/^(\/\*\*)\s*$/,$c_line) or grep(/^\s*(\*\s*[[:print:]]+)$/,$c_line))) {
+					$has_comments++;
+				}
+			}
+			if ($has_comments < 4) { #when we don't have the minimum doc length
+				for (my $i = $l_count - 1; $i > ($l_count - $b_count - 1); $i--) {
+					$file_lines[$i] = $REMOVAL_PLACEHOLDER;
+				}
+				print"on function line : $f_line\n";
+				if ($f_line =~ qr/^(?:\s*(?:(?!\()((?:$type_exp ?)+)\s*(?!\)))+ ([[:word:]]+)\s*\(([[:print:]]+)\))\s*$/) {
+					#TODO:  THIS algorithm is still fragile, can't deal with parameters and return values that have multiple type qualifiers/two word types
+					my @parameters = split(",",$3);
+					my @doc_string;
+					push(@doc_string,"\n/**\n");
+					if ($2 eq "main") {
+						push(@doc_string," * $2 - The entry point of the program\n");
+					}
+					else {
+						push(@doc_string," * $2 - the function name\n");
+					}
+					for my $p (@parameters) {
+						if ($p =~ qr/($type_exp)\s*\*?(\w*)/) {
+						if ($1 and $2) {
+								push(@doc_string," * "."@"."$2: parameter of type $1\n");
+						}
+						}
+					}
+					push(@doc_string," * Return: $1\n");
+					push(@doc_string,"*/\n");
+
+					$file_lines[$l_count] =  "@doc_string\n" . "$f_line";
+					print "@doc_string\n";
+				}
 			}
 			
 		}
