@@ -114,7 +114,8 @@ sub format_file {
 	pad_defs($arg_offset);
 	rm_wp_btw_fun_n_opn_par($arg_offset);
 	brace_unbraced_ifelse_if_needed($arg_offset);
-	fix_separated_tokens($arg_offset)
+	fix_separated_tokens($arg_offset);
+	document_function($arg_offset);
 
 }
 
@@ -527,6 +528,38 @@ sub fix_separated_tokens {
 
 	$l_count++;
 	}
+  write_parsed_lines($arg_offset);
+}
+
+sub document_function {
+
+  my ($arg_offset) = @_;
+	my $l_count = 0;
+	my $seen_entry = 0;
+	my $b_count;
+	my @comments = ();
+	my @parameters = ();
+	my $ret_val;
+
+	for my $f_line (@file_lines) {
+		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
+		print"function line : $f_line\n";
+		if (not (grep/^.*;$/,$f_line)) {
+			$b_count = 1;
+				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count]))) {
+				unshift(@comments,$file_lines[$l_count - $b_count]);
+				$b_count++;
+			}
+			for my $c_line (@comments) {
+				print"\t comment zone: $c_line" . "\n";
+			}
+			
+		}
+		}
+
+		$l_count++;
+	}
+
   write_parsed_lines($arg_offset);
 }
 
