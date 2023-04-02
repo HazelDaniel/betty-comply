@@ -14,7 +14,7 @@ $parameters = $#ARGV + 1;
 %f_property = ('nu',"numbered-and-upper",'nl',"numbered-and-lower",'n',"numbered",'u',"upper",'l',"lower");
 %f_long_property = ('--stop-at='=>"set-stop",'--offset='=>"set-offset");
 $REMOVAL_PLACEHOLDER = "BC<reserved>";
-$type_exp = "(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)";
+$type_exp = "(?:struct \w+|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)";
 #END OF GLOBALS
 
 #SUB-ROUTINES
@@ -541,26 +541,32 @@ sub document_function {
 	my $has_comments = 0;
 
 	for my $f_line (@file_lines) {
+		$b_count = 0;
 		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
 		if (not (grep/^.*;$/,$f_line)) {
-			$b_count = 0;
+				@comments = ();
 				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count - 1]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count - 1]))) {
 				unshift(@comments,$file_lines[$l_count - $b_count - 1]);
 				$b_count++;
 			}
 			#print "b count : \t $b_count\n";
 			for my $c_line (@comments) {
-				if ((grep(/^(\/\*\*)\s*$/,$c_line) or grep(/^\s*(\*\s*[[:print:]]+)$/,$c_line))) {
+				if ((grep(/^(\/\*\*)\s*$/,$c_line) or grep(/^\s*(\*\s*[[:print:]]+)$/,$c_line)) and not grep /^\s*$/,$c_line) {
+					#print "\t\t comment line $c_line\n";
 					$has_comments++;
 				}
+				else{
+					$has_comments = 0;
+				}
 			}
+			#print"comment lines : \t $has_comments...\n";
 			if ($has_comments < 4) { #when we don't have the minimum doc length
+				#print" we don't have the minimum doc length\n";
 				for (my $i = $l_count - 1; $i > ($l_count - $b_count - 1); $i--) {
 					$file_lines[$i] = $REMOVAL_PLACEHOLDER;
 				}
-				print"on function line : $f_line\n";
-				if ($f_line =~ qr/^(?:\s*(?:(?!\()((?:$type_exp ?)+)\s*(?!\)))+ ([[:word:]]+)\s*\(([[:print:]]+)\))\s*$/) {
-					#TODO:  THIS algorithm is still fragile, can't deal with parameters and return values that have multiple type qualifiers/two word types
+				if ($f_line =~ qr/^(?!\()((?:$type_exp +)+\*?)(?<!\))(\w+)\(((?:(?:$type_exp *)+ *(\*)? *\w* *(\[.*\])?(, )?)+)\)$/) {
+					#print"on function line : $f_line\n";
 					my @parameters = split(",",$3);
 					my @doc_string;
 					push(@doc_string,"\n/**\n");
@@ -571,17 +577,17 @@ sub document_function {
 						push(@doc_string," * $2 - the function name\n");
 					}
 					for my $p (@parameters) {
-						if ($p =~ qr/($type_exp)\s*\*?(\w*)/) {
+						if ($p =~ qr/($type_exp *)+\*?(\w*)/) {
 						if ($1 and $2) {
-								push(@doc_string," * "."@"."$2: parameter of type $1\n");
+							push(@doc_string," * "."@"."$2: parameter of type $1.\n");
 						}
 						}
 					}
-					push(@doc_string," * Return: $1\n");
+					push(@doc_string," * Return: $1.\n");
 					push(@doc_string,"*/\n");
 
 					$file_lines[$l_count] =  "@doc_string\n" . "$f_line";
-					print "@doc_string\n";
+					#print "@doc_string\n";
 				}
 			}
 			
