@@ -1,6 +1,6 @@
 |	 PREVIEW  |  FEATURES |
 | :--: | :--: |
-| ![preview](preview.gif) | <ul style="padding: 30px;height: 100%;font-size: 18px;position: relative; display: flex; flex-direction: column;  justify-content: space-evenly; align-items: flex-start;list-style-type: none; text-transform: capitalize;"><br><li>indentation</li><br><li>proper function and control keywords formatting</li><br><li>auto-wrap of if-else statements</li><br><li>documentation of undocumented functions</li><br><li>wrapping return statements</li><br></ul> |
+| ![preview](preview.gif) | <ul style="padding: 30px;height: 100%;font-size: 18px;position: relative; display: flex; flex-direction: column;  justify-content: space-evenly; align-items: flex-start;list-style-type: none; text-transform: capitalize;"><br><li>indentation</li><br><li>proper function and control keywords formatting</li><br><li>auto-wrap of if-else statements</li><br><li>documentation of undocumented functions</li><br><li>wrapping return statements</li><br><li>...more</li></ul> |
 ### INSTALLATION
 		- clone the repo
 		- run the install.sh file as superuser:
