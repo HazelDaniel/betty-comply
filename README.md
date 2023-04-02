@@ -1,19 +1,25 @@
-### PREVIEW
-![preview](preview.gif)
+|	 PREVIEW  |  FEATURES |
+| :--: | :--: |
+| ![preview](preview.gif) | <ul style="padding: 30px;height: 100%;font-size: 18px;position: relative; display: flex; flex-direction: column;  justify-content: space-evenly; align-items: flex-start;list-style-type: none; text-transform: capitalize;"><li style="color: #ffb3fd;  text-align: start; margin-bottom: 10px;">indentation</li><li style="color: #ffb3fd;  text-align: start; margin-bottom: 10px;">proper function and control keywords formatting</li><li style="color: #ffb3fd;  text-align: start; margin-bottom: 10px;">auto-wrap of if-else statements</li><li style="color: #ffb3fd;  text-align: start; margin-bottom: 10px;">documentation of undocumented functions</li><li style="color: #ffb3fd;  text-align: start; margin-bottom: 10px;">wrapping return statements</li></ul> |
 ### INSTALLATION
 		- clone the repo
 		- run the install.sh file as superuser:
 ####
+		git clone https://github.com/HazelDaniel/betty-comply
+		cd betty-comply
 		sudo ./install.sh
 ###
 		- all set!
 
 ### UPDATE
-		- clone the repo
+		- cd into the betty-comply directory
+		- pull from the repo
 		- run the update.sh file as superuser:
 ####
+		git pull origin master
 		sudo ./update.sh
 ### REMOVAL
+		- cd into the betty-comply directory
 		- run the flush.sh file as superuser:
 ####
 		sudo ./flush.sh
