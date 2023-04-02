@@ -590,7 +590,7 @@ sub document_function {
 						}
 					}
 					push(@doc_string," * Return: $1.\n");
-					push(@doc_string,"*/\n");
+					push(@doc_string,"*/");
 
 					$file_lines[$l_count] =  "@doc_string\n" . "$f_line";
 					#print "@doc_string\n";
