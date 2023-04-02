@@ -544,7 +544,11 @@ sub document_function {
 		$b_count = 0;
 		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
 		if (not (grep/^.*;$/,$f_line)) {
-				@comments = ();
+			@comments = ();
+			if (grep/^\s*\}\s*$/,$file_lines[$l_count - 1]) {
+				unshift(@comments,"\n");
+				$b_count++;
+			}
 				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count - 1]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count - 1]))) {
 				unshift(@comments,$file_lines[$l_count - $b_count - 1]);
 				$b_count++;
@@ -562,8 +566,10 @@ sub document_function {
 			#print"comment lines : \t $has_comments...\n";
 			if ($has_comments < 4) { #when we don't have the minimum doc length
 				#print" we don't have the minimum doc length\n";
-				for (my $i = $l_count - 1; $i > ($l_count - $b_count - 1); $i--) {
-					$file_lines[$i] = $REMOVAL_PLACEHOLDER;
+				if (not grep/^\s*\}\s*$/,$file_lines[$l_count - 1]) {
+					for (my $i = $l_count - 1; $i > ($l_count - $b_count - 1); $i--) {
+						$file_lines[$i] = $REMOVAL_PLACEHOLDER;
+					}
 				}
 				if ($f_line =~ qr/^(?!\()((?:$type_exp +)+\*?)(?<!\))(\w+)\(((?:(?:$type_exp *)+ *(\*)? *\w* *(\[.*\])?(, )?)+)\)$/) {
 					#print"on function line : $f_line\n";
