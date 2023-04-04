@@ -14,7 +14,7 @@ $parameters = $#ARGV + 1;
 %f_property = ('nu',"numbered-and-upper",'nl',"numbered-and-lower",'n',"numbered",'u',"upper",'l',"lower");
 %f_long_property = ('--stop-at='=>"set-stop",'--offset='=>"set-offset");
 $REMOVAL_PLACEHOLDER = "BC<reserved>";
-$type_exp = "(?:struct \w+|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)";
+$type_exp = "(?:struct \w+|const|volatile|auto|extern|static|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)";
 #END OF GLOBALS
 
 #SUB-ROUTINES
@@ -271,8 +271,8 @@ sub separate_RD_tokens {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-	if (grep(/[^ ](?:==|!=|<=|>=|<|(?<!-)>|=)[^ ]/,$f_line)) {
-	  $f_line =~ s/([^ ])(==|!=|<=|>=|<|(?<!-)>|=)([^ ])/$1 $2 $3/g;
+	if ($f_line =~ /[^ ]((==|!=|<=|>=|<|(?<!-)>|=))[^ ]/) {
+		$f_line = $` . " " . $1 . " " . $';
 	  $file_lines[$l_count] = $f_line;
 	}
 	if (grep(/[^ ](?:\&\&|\|\|)[^ ]/,$f_line)){
@@ -497,10 +497,10 @@ sub fix_separated_tokens {
 		if(grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
 			$seen_entry = 1;
 		}
-		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
+		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*((?:\* ?)*)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
 			$seen_entry = 1;
 		}
-			if ($f_line =~ qr/($type_exp)\s*(\*)\s*(\w+)/) {
+			if ($f_line =~ qr/($type_exp)\s*((?:\* ?))*\s*(\w+)/) {
 				$f_line = $` . $1 . " " . $2 . $3 . $';
 				$file_lines[$l_count] = $f_line;
 			}
@@ -516,7 +516,7 @@ sub fix_separated_tokens {
 				$file_lines[$l_count] = $f_line;
 			}
 		}
-			if ($f_line =~ /(\w+)\s*(-)(?!>)\s*(\w+)/mg) {
+			if ($f_line =~ /(\w+)\s*(-)(?<!--)(?!>)\s*(\w+)/mg) {
 				if ($f_line !~ /"[^"]+"/g) {
 					$f_line = $` . $1 . " " . $2 . " " . $3 . $';
 					$file_lines[$l_count] = $f_line;
@@ -539,17 +539,16 @@ sub document_function {
 	my $b_count;
 	my @comments = ();
 	my $has_comments = 0;
-
 	for my $f_line (@file_lines) {
 		$b_count = 0;
-		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
+		if(grep (/^(?:\s*(?:(?!\()(?:const|struct \w+|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ ((\* ?))*\s*[[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line) or grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
 		if (not (grep/^.*;$/,$f_line)) {
 			@comments = ();
 			if (grep/^\s*\}\s*$/,$file_lines[$l_count - 1]) {
 				unshift(@comments,"\n");
 				$b_count++;
 			}
-				while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count - 1]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count - 1]))) {
+			while (not (grep(/^\s*\}\s*$/,$file_lines[$l_count - $b_count - 1]) or grep(/^\s*[^\/*].*$/,$file_lines[$l_count - $b_count - 1]))) {
 				unshift(@comments,$file_lines[$l_count - $b_count - 1]);
 				$b_count++;
 			}
@@ -571,7 +570,7 @@ sub document_function {
 						$file_lines[$i] = $REMOVAL_PLACEHOLDER;
 					}
 				}
-				if ($f_line =~ qr/^(?!\()((?:$type_exp +)+\*?)(?<!\))(\w+)\(((?:(?:$type_exp *)+ *(\*)? *\w* *(\[.*\])?(, )?)+)\)$/) {
+				if ($f_line =~ qr/^(?!\()((?:$type_exp +)+(?:(?:\* ?)*))\s*(?<!\))(\w+)\(((?:(?:$type_exp *)+ *((?:\* ?)*) *\w* *(\[.*\])?(, )?)+)\)$/) {
 					#print"on function line : $f_line\n";
 					my @parameters = split(",",$3);
 					my @doc_string;
@@ -582,10 +581,12 @@ sub document_function {
 					else {
 						push(@doc_string," * $2 - the function name\n");
 					}
+					#print"parameters: @parameters\n";
 					for my $p (@parameters) {
-						if ($p =~ qr/($type_exp *)+\*?(\w*)/) {
-						if ($1 and $2) {
-							push(@doc_string," * "."@"."$2: parameter of type $1.\n");
+						#print"\t parameter : \t $p\n";
+						if ($p =~ qr/((?:$type_exp *)+)((?:\* ?)*)(\w*)/) {
+						if ($1 and $3) {
+							push(@doc_string," * "."@"."$3: parameter of type $1$2.\n");
 						}
 						}
 					}
@@ -759,7 +760,7 @@ sub remove_blanks {
 			if (not grep (/^#/,$file_lines[$l_count - 1])) {
 
 			if(not grep(/^([[:alpha:]]+ main[^{]*$)/,$file_lines[$l_count + 1])) {
-				if( not grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$file_lines[$l_count + 1])) {
+				if( not grep (/^(?:\s*(?:(?!\()(?:static|volatile|extern|auto|struct \w+|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*(\*)*\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$file_lines[$l_count + 1])) {
 					$f_line = $REMOVAL_PLACEHOLDER;
 					$file_lines[$l_count] = $f_line;
 				}
