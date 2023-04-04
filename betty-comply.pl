@@ -272,9 +272,20 @@ sub separate_RD_tokens {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-	if ($f_line =~ /[^ ]((==|!=|<=|>=|<|(?<!-)>|=))[^ ]/) {
-		$f_line = $` . " " . $1 . " " . $';
-	  $file_lines[$l_count] = $f_line;
+	if ($f_line =~ /[[:graph:]](?:==|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g) {
+	if ($f_line !~ /"[^"]+"/g) {
+	while ($f_line =~ /(?<=[[:graph:]])((?:==|!=|<=|>=|<|(?<!-)>|=))(?=[[:graph:]])/mg) {
+		my $start = $`;
+		my $end = $';
+		my $token = $1;
+		#print "$f_line:\n";
+		#print "start:\t $start\n token : \t $token\n end : \t $end\n";
+		if ($` =~ /^[^"]*"[^"]*"[^"]*/ or $' =~ /[^"]*"[^"]*"[^"]*$/ or (not grep(/"/,$f_line))) {
+			$f_line = $start . " " . $token . " " . $end;
+			$file_lines[$l_count] = $f_line;
+		}
+	}
+	}
 	}
 	if (grep(/[^ ](?:\&\&|\|\|)[^ ]/,$f_line)){
 		#print "$1\n";
@@ -283,7 +294,7 @@ sub separate_RD_tokens {
 	}
 	if ($f_line =~ /[[:graph:]],[[:graph:]]/g) {
 	if ($f_line !~ /"[^"]+"/g) {
-	if ($f_line =~ /(?<=[[:graph:]])(,)(?=[[:graph:]])/g) {
+	while ($f_line =~ /(?<=[[:graph:]])(,)(?=[[:graph:]])/g) {
 		my $start = $`;
 		my $end = $';
 		my $comma = $1;
@@ -292,7 +303,6 @@ sub separate_RD_tokens {
 		#	print "comma separated tokens found\n";
 			$f_line = $start . $comma . " " . $end;
 			$file_lines[$l_count] = $f_line;
-
 		}
 	}
 	}
