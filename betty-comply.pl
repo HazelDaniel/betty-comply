@@ -104,7 +104,8 @@ sub format_file {
   format_trailing($arg_offset);
   adjust_indent($arg_offset);
   rm_trailing_wp($arg_offset);
-  separate_RD_tokens($arg_offset);
+	separate_RD_tokens($arg_offset);
+	#___ last debug end;
   remove_blanks($arg_offset);
 	cast_entry($arg_offset);
   no_brace_indent($arg_offset);
@@ -278,13 +279,18 @@ sub separate_RD_tokens {
 	if (grep(/[^ ](?:\&\&|\|\|)[^ ]/,$f_line)){
 		#print "$1\n";
 		$f_line =~ s/([^ ])(\&\&|\|\|)([^ ])/$1 $2 $3/g;
+	  $file_lines[$l_count] = $f_line;
 	}
 	if ($f_line =~ /[[:graph:]],[[:graph:]]/g) {
 	if ($f_line !~ /"[^"]+"/g) {
 	if ($f_line =~ /(?<=[[:graph:]])(,)(?=[[:graph:]])/g) {
+		my $start = $`;
+		my $end = $';
+		my $comma = $1;
 		if ($` =~ /^[^"]*"[^"]*"[^"]*/ or $' =~ /[^"]*"[^"]*"[^"]*$/ or (not grep(/"/,$f_line))) {
+		#	print"line: \t". ($l_count + 1)."$f_line\n";
 		#	print "comma separated tokens found\n";
-			$f_line = $` . $1 . " " . $';
+			$f_line = $start . $comma . " " . $end;
 			$file_lines[$l_count] = $f_line;
 
 		}
