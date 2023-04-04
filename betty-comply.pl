@@ -684,11 +684,19 @@ sub validate_opt_length {
 if($parameters == 1) {
   # parseFile [FILE]
   $file_name = $ARGV[0];
+	my $test_regex ='^\s*$';
+	my $test = qx/tail -n 1 $file_name | grep -Pv $test_regex/;
   if(grep(/^-.*/,$file_name)) {
 		print "invalid single argument!\n";
 		exit 1;
   }
-	format_file(0);
+	if ($test) {
+		format_file(0);
+	}
+	else {
+		print "error: remove blank line at the end of file and try again!\n";
+		exit 271;
+	}
   #print "one parameter argument\n";
 }
 elsif($parameters == 2) {
