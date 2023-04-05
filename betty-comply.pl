@@ -513,10 +513,10 @@ sub fix_separated_tokens {
 		if(grep(/^([[:alpha:]]+ main[^{]*$)/,$f_line)) {
 			$seen_entry = 1;
 		}
-		if(grep (/^(?:\s*(?:(?!\()(?:int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*((?:\* ?)*)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
+		if(grep (/^(?:\s*(?:(?!\()(?:volatile|static|extern|struct \w+|const|int|uint32_t|uint16_t|uint8_t|float|double|char|short|long long|long double|long|signed|_Bool|bool|enum|unsigned|void|complex|_Complex|size_t|time_t|FILE|fpos_t|va_list|jmp_buf|wchar_t|wint_t|wctype_t|mbstate_t|div_t|ldiv_t|imaxdiv_t|int8_t|int16_t|int32_t|int64_t|int_least8_t|int_least16_t|int_least32_t|int_least64_t|uint_least8_t|uint_least16_t|uint_least32_t|uint_least64_t|int_fast8_t|int_fast16_t|int_fast32_t|int_fast64_t|uint_fast8_t|uint_fast16_t|uint_fast32_t|uint_fast64_t|intptr_t|uintptr_t)\s*((?:\* ?)*)\s*(?!\)))+ [[:word:]]+\s*\([[:print:]]+\))\s*$/,$f_line)) {
 			$seen_entry = 1;
 		}
-			if ($f_line =~ qr/($type_exp)\s*((?:\* ?))*\s*(\w+)/) {
+		if ($f_line =~ qr/((?:$type_exp )+)\s*((?:\* ?)*)\s*(\w+)/) {
 				$f_line = $` . $1 . " " . $2 . $3 . $';
 				$file_lines[$l_count] = $f_line;
 			}
@@ -526,12 +526,12 @@ sub fix_separated_tokens {
 				$f_line = $` . $1 . $2 . $';
 				$file_lines[$l_count] = $f_line;
 			}
-		if ($f_line =~ /(\w+)\s*(\*)\s*(\w+)/mg) {
-			if ($f_line !~ /"[^"]+"/g and $1 !~ qr/$type_exp/) {
-				$f_line = $` . $1 . " " . $2 . " " . $3 . $';
-				$file_lines[$l_count] = $f_line;
+			if ($f_line =~ /(\w+)\s+((?:\* ?)*)\s+(\w+)/mg) {
+				if ($f_line !~ /"[^"]+"/g and $1 !~ qr/$type_exp/) {
+					$f_line = $` . $1 . " " . $2 . " " . $3 . $';
+					$file_lines[$l_count] = $f_line;
+				}
 			}
-		}
 			if ($f_line =~ /(\w+)\s*(-)(?<!--)(?!>)\s*(\w+)/mg) {
 				if ($f_line !~ /"[^"]+"/g) {
 					$f_line = $` . $1 . " " . $2 . " " . $3 . $';
