@@ -1,6 +1,18 @@
 |	 PREVIEW  |  FEATURES |
 | :--: | :--: |
 | ![preview](preview2.gif) | <ul style="padding: 30px;height: 100%;font-size: 18px;position: relative; display: flex; flex-direction: column;  justify-content: space-evenly; align-items: flex-start;list-style-type: none; text-transform: capitalize;"><br><li>indentation</li><br><li>proper function and control keywords formatting</li><br><li>auto-wrap of if-else statements</li><br><li>documentation of undocumented functions</li><br><li>wrapping return statements</li><br><li>...more</li></ul> |
+### NAME
+       _bettyComply
+
+### DESCRIPTION
+		format a file to comply to betty ( the alx's C code parser that checks for errors in syntactic structure ) 's standards
+
+### SYNOPSIS
+-	 _bettyComply [OPTION]... [FILE]...
+-	 _complyAll
+
+#####			 `NOTE: you must be in the working directory to run _complyAll`
+
 ### INSTALLATION
 		- clone the repo
 		- run the install.sh file as superuser:
@@ -23,18 +35,6 @@
 		- run the flush.sh file as superuser:
 ####
 		sudo ./flush.sh
-### NAME
-       _bettyComply - adjust a file to betty's standards
-### SYNOPSIS
-       _bettyComply [OPTION]... [FILE]...
-
-### DESCRIPTION
-				format a file to comply to betty ( the alx's C code parser that checks for errors in syntactic structure ) 's standards
-       -,
-           
-       -, 
-       -, 
-
 ### AUTHOR
        HAZEL DANIEL.
        
