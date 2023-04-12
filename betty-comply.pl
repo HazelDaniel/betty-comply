@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use Term::ANSIColor qw(:constants);
 use open qw/:std :utf8/;
-use v5;
+use v5.4;
 
 =for
 ====== WELCOME TO MY LITTLE PROJECT! ======
@@ -267,19 +267,36 @@ sub rm_trailing_wp {
   write_parsed_lines($arg_offset);
 }
 
+sub replace_tokens {
+	my ($pattern) = @_;
+	# compression...
+	while ($pattern =~ /,\s+(\* *)?(\w+)/){
+		$pattern =~ s/,\s+/,/g;
+	}
+	while ($pattern =~ /\s+,(\* *)?(\w+)/){
+		$pattern =~ s/\s+,/,/g;
+	}
+	while ($pattern =~ /\s+,\s+(\* *)?(\w+)/){
+		$pattern =~ s/\s+,\s+/,/g;
+	}
+	# decompression...
+	while ($pattern =~ /[[:graph:]]?,[[:graph:]]/) {
+		$pattern =~ s/,/, /g;
+	}
+	return $pattern;
+}
+
 sub separate_RD_tokens {
   my ($arg_offset) = @_;
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-	if ($f_line =~ /[[:graph:]](?:==|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g) {
+	if ($f_line =~ /[[:graph:]](?:==|\/|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g) {
 	if ($f_line !~ /"[^"]+"/g) {
-	while ($f_line =~ /(?<=[[:graph:]])((?:==|!=|<=|>=|<|(?<!-)>|=))(?=[[:graph:]])/mg) {
+	while ($f_line =~ /(?<=[[:graph:]])((?:==|\/|!=|<=|>=|<|(?<!-)>|=))(?=[[:graph:]])/mg) {
 		my $start = $`;
 		my $end = $';
 		my $token = $1;
-		#print "$f_line:\n";
-		#print "start:\t $start\n token : \t $token\n end : \t $end\n";
 		if ($` =~ /^[^"]*"[^"]*"[^"]*/ or $' =~ /[^"]*"[^"]*"[^"]*$/ or (not grep(/"/,$f_line))) {
 			$f_line = $start . " " . $token . " " . $end;
 			$file_lines[$l_count] = $f_line;
@@ -288,26 +305,48 @@ sub separate_RD_tokens {
 	}
 	}
 	if (grep(/[^ ](?:\&\&|\|\|)[^ ]/,$f_line)){
-		#print "$1\n";
 		$f_line =~ s/([^ ])(\&\&|\|\|)([^ ])/$1 $2 $3/g;
 	  $file_lines[$l_count] = $f_line;
 	}
-	if ($f_line =~ /[[:graph:]],[[:graph:]]/g) {
-	if ($f_line !~ /"[^"]+"/g) {
-	while ($f_line =~ /(?<=[[:graph:]])(,)(?=[[:graph:]])/g) {
-		my $start = $`;
-		my $end = $';
-		my $comma = $1;
-		if ($` =~ /^[^"]*"[^"]*"[^"]*/ or $' =~ /[^"]*"[^"]*"[^"]*$/ or (not grep(/"/,$f_line))) {
-		#	print"line: \t". ($l_count + 1)."$f_line\n";
-		#	print "comma separated tokens found\n";
-			$f_line = $start . $comma . " " . $end;
-			$file_lines[$l_count] = $f_line;
+	if ($f_line =~ /(?<=[[:graph:]])\s*,\s*(?=[[:graph:]])/m) {
+ 	if ($f_line =~ /^(\s*\w+\(".*")\s*(,\s*.*\))(;)$/) {
+		my $_left = $1;
+		my $_right = $2;
+		my $_rem = $3;
+		$_right = replace_tokens($_right);
+		$file_lines[$l_count] = "$_left$_right$_rem";
+	}
+	elsif ($f_line =~ /(\w+)\s*\(([^"].*[^"])\)(;|)\s*$/) {
+		my $_left = $`;
+		my $_right = $';
+		my $_word = $1;
+		my $_rem = $3;
+		my $match = $2;
+		# print "$match\n";
+		$match = replace_tokens($match);
+		$file_lines[$l_count] =  "$_left" . "$_word " . "($match)" . $_rem . "$_right\n";
+	}
+	elsif ($f_line =~ qr/(^(?:\s*$type_exp)+)\s*(.*)(;)$/) { # NEXT CASEs: variable declaration and assignment
+		my $_right = $';
+		my $_word = $1;
+		my $_rem = $3;
+		my $match = $2;
+		if (not grep(/"/,$f_line)) #TODO: support seperating commas in char(*) declarations
+		{
+			$match = replace_tokens($match);
+			$file_lines[$l_count] = "$_word " . "$match" . $_rem . "$_right\n";
+		}
+	}
+	elsif ($f_line =~ /(.*=.*=.*;)/) {
+		my $_left = $`;
+		my $_word = $1;
+		if (not grep(/"/,$f_line)) #TODO: support seperating commas in char(*) declarations
+		{
+			$_word = replace_tokens($_word);
+			$file_lines[$l_count] = "$_left" . "$_word\n";
 		}
 	}
 	}
-	}
-
 	$l_count++;
   }
   write_parsed_lines($arg_offset);
@@ -522,7 +561,7 @@ sub fix_separated_tokens {
 			}
 		if ($seen_entry == 1) {
 			if ($f_line =~ /(\w+)\s+(\[[[:print:]]+\])/) {
-				#print "an open square brace here: \t $f_line \n";
+				# print "an open square brace here: \t $f_line \n";
 				$f_line = $` . $1 . $2 . $';
 				$file_lines[$l_count] = $f_line;
 			}
