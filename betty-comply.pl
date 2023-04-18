@@ -291,7 +291,7 @@ sub separate_RD_tokens {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-	if ($f_line =~ /[[:graph:]](?:==|\/|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g) {
+	if ($f_line =~ /[[:graph:]](?:==|\/|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g and not (grep(/^#.*/,$f_line))) {
 	if ($f_line !~ /"[^"]+"/g) {
 	while ($f_line =~ /(?<=[[:graph:]])((?:==|\/|!=|<=|>=|<|(?<!-)>|=))(?=[[:graph:]])/mg) {
 		my $start = $`;
@@ -316,16 +316,6 @@ sub separate_RD_tokens {
 		$_right = replace_tokens($_right);
 		$file_lines[$l_count] = "$_left$_right$_rem";
 	}
-	elsif ($f_line =~ /(\w+)\s*\(([^"].*[^"])\)(;|)\s*$/) {
-		my $_left = $`;
-		my $_right = $';
-		my $_word = $1;
-		my $_rem = $3;
-		my $match = $2;
-		# print "$match\n";
-		$match = replace_tokens($match);
-		$file_lines[$l_count] =  "$_left" . "$_word " . "($match)" . $_rem . "$_right\n";
-	}
 	elsif ($f_line =~ qr/(^(?:\s*$type_exp)+)\s*(.*)(;)$/) { # NEXT CASEs: variable declaration and assignment
 		my $_right = $';
 		my $_word = $1;
@@ -336,6 +326,17 @@ sub separate_RD_tokens {
 			$match = replace_tokens($match);
 			$file_lines[$l_count] = "$_word " . "$match" . $_rem . "$_right\n";
 		}
+	}
+	elsif ($f_line =~ /(\w+)(\s*)\(([^"].*[^"])\)(;|)\s*$/) {
+		my $_left = $`;
+		my $_right = $';
+		my $_word = $1;
+		my $_rem = $4;
+		my $match = $3;
+		my $_space = $2;
+		# print "$match\n";
+		$match = replace_tokens($match);
+		$file_lines[$l_count] =  "$_left" . "$_word" . $_space . "($match)" . $_rem . "$_right\n";
 	}
 	elsif ($f_line =~ /(.*=.*=.*;)/) {
 		my $_left = $`;
@@ -445,10 +446,12 @@ sub rm_wp_btw_fun_n_opn_par {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-		if ($f_line =~ qr/^\s*((?:(?!\()$type_exp\s*(?!\)))+ [[:word:]]+)\s+(\([[:print:]]+\))\s*$/) {
+		if ($f_line =~ qr/^\s*((?:(?!\()$type_exp\s*(?!\)))+ [[:word:]]+)\s+(\([[:print:]]+\)(;|))\s*$/) {
+			#print "$f_line\n";
 			$f_line = $1 . $2;
 			$file_lines[$l_count] = $f_line;
 		#	print "an tokens here are .$1\n$2 \n and \n$3\n";
+		#	TODO: add support for function calls as well
 		}
 	$l_count++;
   }
