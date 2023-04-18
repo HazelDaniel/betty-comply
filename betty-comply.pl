@@ -291,7 +291,7 @@ sub separate_RD_tokens {
   my $l_count = 0;
 
   for my $f_line (@file_lines) {
-	if ($f_line =~ /[[:graph:]](?:==|\/|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g) {
+	if ($f_line =~ /[[:graph:]](?:==|\/|!=|<=|>=|<|(?<!-)>|=)[[:graph:]]/g and not (grep(/^#.*/,$f_line))) {
 	if ($f_line !~ /"[^"]+"/g) {
 	while ($f_line =~ /(?<=[[:graph:]])((?:==|\/|!=|<=|>=|<|(?<!-)>|=))(?=[[:graph:]])/mg) {
 		my $start = $`;
